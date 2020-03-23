@@ -1,11 +1,18 @@
 {
+  "devDependencies": {
+    "@types/request": "2.47.0",
+    "@types/request-promise": "^4.1.46"
+  },
   "dependencies": {
-    "@types/request-promise": "^4.1.46",
+    "request": "^2.88.2",
     "typescript": "^3.8.3"
   },
   "name": "mess-api",
   "version": "1.0.0",
   "main": "laffey.ts",
+  "scripts": {
+    "start": "ts-node laffey.ts"
+  },
   "repository": "https://github.com/skyneko/mess-api.git",
   "author": "yui421 <banhgao.nya@gmail.com>",
   "license": "MIT"
