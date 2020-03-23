@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@types/request-promise": "^4.1.46",
+    "typescript": "^3.8.3"
+  },
+  "name": "mess-api",
+  "version": "1.0.0",
+  "main": "laffey.ts",
+  "repository": "https://github.com/skyneko/mess-api.git",
+  "author": "yui421 <banhgao.nya@gmail.com>",
+  "license": "MIT"
+}
