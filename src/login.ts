@@ -1,9 +1,9 @@
-import { post, Response } from "request"
-import { readFileSync, existsSync } from "fs"
-import qs from "querystring";
-import { createHeader } from "./utils"
+import { post, get, Response } from "request"
+import { readFileSync, writeFileSync, existsSync } from "fs"
+import qs from "querystring"
+import { createHeader, getFromHTML, log } from "./utils"
 
-const cookiePath: string = "../user/cookie.json"
+const cookiePath: string = "./user/cookie.uwu"
 
 export interface User {
     username: string,
@@ -12,10 +12,17 @@ export interface User {
 
 export interface UserRequestData {
     "cookie": string,
-    "fb-dtsg": string,
+    "fbDtsg": string,
+    "xhpcComposerid": string,
+    "composerSessionId": string,
+    "ftEntIdentifier": string,
+    "revision": string,
+    "irisSeqID": string,
+    "rootid": string,
+    "sessionId": string
 }
 
-function createDataString (user: User):string {
+function createDataString(user: User): string {
     return qs.stringify({
         jazoest: "2754",
         lsd: "AVrsdFeg",
@@ -42,9 +49,11 @@ export function login(user: User): Promise<UserRequestData> {
 
         /** kiem tra file cookie.json, neu khong co thi tao cookie moi uwu */
         if (existsSync(cookiePath)) {
-            const userData: UserRequestData = JSON.parse(readFileSync(cookiePath, "utf-8"))
-            resolve(userData)
+            log("info", "Read cookie file ... ")
+            refeshPage(readFileSync(cookiePath, "utf-8")).then(resolve)
+            return
         }
+        log("info","Logging ...")
 
         const loginBaseUrl: string = "https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&lwv=110"
 
@@ -54,7 +63,7 @@ export function login(user: User): Promise<UserRequestData> {
         }, (err: Error, resp: Response, html: string): void => {
             if (err) return console.log(err)
             if (!resp.headers["set-cookie"]) return console.log("headers['set-cookie'] 1 is undefined!")
-            
+
             let cookie: string = resp.headers["set-cookie"].map(key => key.split("; ")[0]).join("; ")
 
             post({
@@ -63,16 +72,54 @@ export function login(user: User): Promise<UserRequestData> {
                 body: createDataString(user)
             }, (err: Error, resp: Response, html: string): void => {
                 if (err) return console.log(err)
-                if (!resp.headers["set-cookie"]) return console.log("headers['set-cookie'] 2 is undefined!")
-                
+                if (!resp.headers["set-cookie"]) return log("error", "headers['set-cookie'] 2 is undefined!")
+
                 cookie = resp.headers["set-cookie"].map(key => key.split("; ")[0]).join("; ")
-                
-                if (cookie.lastIndexOf("sfau=") > -1) return console.log("invalid username or password.")
-                console.log(cookie)
+
+                if (cookie.indexOf("sfau=") > -1) return log("error", "Invalid username or password.")
+                if (cookie.indexOf("checkpoint=") > -1) return log("error", "Checkpoint.")
+
+                log("info", "Logged-in!")
+                log("info", "Generate cookie file ...")
+                /** request facebook.com */
+                refeshPage(cookie).then(resolve)
             })
         })
 
-        console.log("goodbye world")
     })
 
+}
+
+export async function saveCookie (data: UserRequestData) {
+    writeFileSync(cookiePath, data.cookie)
+    return data
+}
+
+export function refeshPage(cookie: string): Promise<UserRequestData> {
+    return new Promise ((resolve) => {
+        get({ uri: "https://facebook.com/", headers: createHeader(cookie) }, (err: Error, resp: Response, html: string) => {
+
+            const fbDtsg: string = getFromHTML(html, 'name="fb_dtsg" value="', '"')
+            const xhpcComposerid: string = getFromHTML(html, 'name="xhpc_composerid" value="', '"')
+            const composerSessionId: string = getFromHTML(html, 'name="composer_session_id" value="', '"')
+            const ftEntIdentifier: string = getFromHTML(html, 'name="ft_ent_identifier" value="', '"')
+            const revision: string = getFromHTML(html, 'revision":', ",")
+            const irisSeqID: string = getFromHTML(html, 'irisSeqID:"', '"')
+            const rootid: string = getFromHTML(html, 'rootID:"', '"')
+            const sessionId: string = getFromHTML(html, "session_id=", "&")
+    
+            resolve({
+                cookie, 
+                fbDtsg, 
+                xhpcComposerid, 
+                composerSessionId, 
+                ftEntIdentifier, 
+                revision, 
+                irisSeqID, 
+                rootid, 
+                sessionId 
+            })
+    
+        })
+    })
 }
