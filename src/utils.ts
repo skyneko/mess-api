@@ -27,3 +27,24 @@ export function createHeader(cookie: string = "", userAgent?:string): Headers {
         "Cookie": cookie
     }
 }
+
+
+export function getFromHTML (str: string, startToken: string, endToken: string): string {
+    var start = str.indexOf(startToken) + startToken.length;
+    if (start < startToken.length) return "";
+
+    var lastHalf = str.substring(start);
+    var end = lastHalf.indexOf(endToken);
+    if (end === -1) {
+        throw Error(
+            "Could not find endTime `" + endToken + "` in the given string."
+        );
+    }
+    return lastHalf.substring(0, end);
+}
+
+export function log(type: string, text: string): void {
+    if (type === "info") console.log("\x1b[32m","[LOG]:","\x1b[0m",text)
+    if (type === "warn") console.log("\x1b[31m","[WARN]:","\x1b[0m",text)
+    if (type === "error") console.log("\x1b[41m"+"[ERROR]:"+"\x1b[0m",text) 
+}
