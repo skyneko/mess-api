@@ -50,7 +50,7 @@ export function login(user: User): Promise<UserRequestData> {
         /** kiem tra file cookie.json, neu khong co thi tao cookie moi uwu */
         if (existsSync(cookiePath)) {
             log("info", "Read cookie file ... ")
-            refeshPage(readFileSync(cookiePath, "utf-8")).then(resolve)
+            refreshPage(readFileSync(cookiePath, "utf-8")).then(resolve)
             return
         }
         log("info","Logging ...")
@@ -82,7 +82,7 @@ export function login(user: User): Promise<UserRequestData> {
                 log("info", "Logged-in!")
                 log("info", "Generate cookie file ...")
                 /** request facebook.com */
-                refeshPage(cookie).then(resolve)
+                refreshPage(cookie).then(resolve)
             })
         })
 
@@ -95,7 +95,7 @@ export async function saveCookie (data: UserRequestData) {
     return data
 }
 
-export function refeshPage(cookie: string): Promise<UserRequestData> {
+export function refreshPage(cookie: string): Promise<UserRequestData> {
     return new Promise ((resolve) => {
         get({ uri: "https://facebook.com/", headers: createHeader(cookie) }, (err: Error, resp: Response, html: string) => {
 
