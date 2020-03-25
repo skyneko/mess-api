@@ -1,26 +1,9 @@
 import { post, get, Response } from "request"
 import { readFileSync, writeFileSync, existsSync } from "fs"
 import qs from "querystring"
-import { createHeader, getFromHTML, log } from "./utils"
+import { createHeader, getFromHTML, log, User, UserRequestData } from "./utils"
 
 const cookiePath: string = "./user/cookie.uwu"
-
-export interface User {
-    username: string,
-    password: string
-}
-
-export interface UserRequestData {
-    "cookie": string,
-    "fbDtsg": string,
-    "xhpcComposerid": string,
-    "composerSessionId": string,
-    "ftEntIdentifier": string,
-    "revision": string,
-    "irisSeqID": string,
-    "rootid": string,
-    "sessionId": string
-}
 
 function createDataString(user: User): string {
     return qs.stringify({

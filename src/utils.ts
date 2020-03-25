@@ -11,7 +11,24 @@ export interface Headers {
     "Cookie": string
 }
 
-export function createHeader(cookie: string = "", userAgent?:string): Headers {
+export interface User {
+    username: string,
+    password: string
+}
+
+export interface UserRequestData {
+    "cookie": string,
+    "fbDtsg": string,
+    "xhpcComposerid": string,
+    "composerSessionId": string,
+    "ftEntIdentifier": string,
+    "revision": string,
+    "irisSeqID": string,
+    "rootid": string,
+    "sessionId": string
+}
+
+export function createHeader(cookie: string = "", userAgent?: string): Headers {
     if (!userAgent) userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
 
     return {
@@ -29,7 +46,7 @@ export function createHeader(cookie: string = "", userAgent?:string): Headers {
 }
 
 
-export function getFromHTML (str: string, startToken: string, endToken: string): string {
+export function getFromHTML(str: string, startToken: string, endToken: string): string {
     var start = str.indexOf(startToken) + startToken.length;
     if (start < startToken.length) return "";
 
@@ -43,8 +60,20 @@ export function getFromHTML (str: string, startToken: string, endToken: string):
     return lastHalf.substring(0, end);
 }
 
+export function getUIDFromCookie(cookie: string): number {
+
+    for (let e of cookie.split("; ")) {
+        if (e.indexOf("c_user=") > -1) {
+            return parseInt(e.split("=")[1])
+        } 
+    }
+
+    log("warn", "User id not found.")
+    return 0
+}
+
 export function log(type: string, text: string): void {
-    if (type === "info") console.log("\x1b[32m","[LOG]:","\x1b[0m",text)
-    if (type === "warn") console.log("\x1b[31m","[WARN]:","\x1b[0m",text)
-    if (type === "error") console.log("\x1b[41m"+"[ERROR]:"+"\x1b[0m",text) 
+    if (type === "info") console.log("\x1b[32m", "[LOG]:", "\x1b[0m", text)
+    if (type === "warn") console.log("\x1b[31m", "[WARN]:", "\x1b[0m", text)
+    if (type === "error") console.log("\x1b[41m" + "[ERROR]:" + "\x1b[0m", text)
 }
