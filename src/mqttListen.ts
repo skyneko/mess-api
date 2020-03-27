@@ -17,7 +17,10 @@ export interface Message {
         offlineThreadingId: string,
         skipBumpThread: boolean,
         tags: Array<string>,
-        threadKey: { threadFbId: string },
+        threadKey: { 
+            threadFbId: string, 
+            otherUserFbId: string 
+        },
         threadReadStateEffect: string,
         timestamp: string
     },
@@ -166,7 +169,7 @@ function handleEventTopic(event: string, data: MessageEvent, callbackFunc: Funct
                 let messageId: string = message.messageMetadata.messageId
 
                 if (message.body !== undefined && lastMessageId.includes(messageId) === false) {
-                    console.log(lastMessageId)
+                    // console.log(lastMessageId)
                     callbackFunc(message)
                     
                     lastMessageId.push(messageId)
