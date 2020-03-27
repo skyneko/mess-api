@@ -60,6 +60,12 @@ export function getFromHTML(str: string, startToken: string, endToken: string): 
     return lastHalf.substring(0, end);
 }
 
+export function getRandomInt(min: number, max: number) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 export function getUIDFromCookie(cookie: string): number {
 
     for (let e of cookie.split("; ")) {
@@ -70,6 +76,10 @@ export function getUIDFromCookie(cookie: string): number {
 
     log("warn", "User id not found.")
     return 0
+}
+
+export function isUserID(id: number) {
+    return id.toString().indexOf("1000") === 0
 }
 
 export function log(type: string, text: string): void {
