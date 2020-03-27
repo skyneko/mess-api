@@ -4,14 +4,19 @@
     "@types/request-promise": "^4.1.46"
   },
   "dependencies": {
+    "@types/mqtt": "^2.5.0",
+    "mqtt": "^3.0.0",
     "request": "^2.88.2",
-    "typescript": "^3.8.3"
+    "request-promise": "^4.2.5",
+    "typescript": "^3.8.3",
+    "websocket-stream": "^5.5.2"
   },
   "name": "mess-api",
   "version": "1.0.0",
   "main": "laffey.ts",
   "scripts": {
-    "start": "ts-node laffey.ts"
+    "start": "ts-node laffey.ts",
+    "build": "tsc laffey.ts"
   },
   "repository": "https://github.com/skyneko/mess-api.git",
   "author": "yui421 <banhgao.nya@gmail.com>",
