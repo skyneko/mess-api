@@ -28,6 +28,14 @@ export interface UserRequestData {
     "sessionId": string
 }
 
+export interface UploadImage {
+    image_id: number,
+    filename: string,
+    filetype: string,
+    src: string,
+    fbid: number 
+}
+
 export function createHeader(cookie: string = "", userAgent?: string): Headers {
     if (!userAgent) userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
 
@@ -71,19 +79,35 @@ export function getUIDFromCookie(cookie: string): number {
     for (let e of cookie.split("; ")) {
         if (e.indexOf("c_user=") > -1) {
             return parseInt(e.split("=")[1])
-        } 
+        }
     }
 
     log("warn", "User id not found.")
     return 0
 }
 
+export function getFileType(filename: string) {
+
+    let file_ext = filename.slice(filename.length - 3, filename.length);
+
+    if (file_ext === "png" || file_ext === "jpg") return "image";
+    if (file_ext === "mp3") return "audio";
+
+    return "file";
+}
+
 export function isUserID(id: number) {
     return id.toString().indexOf("1000") === 0
 }
 
+
 export function log(type: string, text: string): void {
+    const maxLength = 65
+    if (text.length > maxLength) text = text.slice(0, maxLength) + "... "
+
     if (type === "info") console.log("\x1b[32m", "[LOG]:", "\x1b[0m", text)
     if (type === "warn") console.log("\x1b[31m", "[WARN]:", "\x1b[0m", text)
     if (type === "error") console.log("\x1b[41m" + "[ERROR]:" + "\x1b[0m", text)
+    if (type === "receive") console.log("\x1b[34m" + "[R]:" + "\x1b[0m", text.replace(">", "\x1b[35m"+">"+ "\x1b[0m"))
+    if (type === "send") console.log("\x1b[33m" + "[S]:" + "\x1b[0m", text.replace(">", "\x1b[35m"+">"+ "\x1b[0m"))
 }
