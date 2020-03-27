@@ -6,6 +6,7 @@ import {
     UserRequestData,
     UploadImage,
     saveCookie,
+    Color,
     listen,
     Message,
     Messenger,
@@ -29,17 +30,27 @@ function hadleMessage(msg: Message, Bot: MessengerApi) {
             threadId = parseInt(threadId)
 
         if (msg.body === "ping") {
-            log("send", "pong" + " > " + threadId)
             Bot.sendMsg("pong", threadId as number) 
+            log("send", "pong", " > ", threadId)
+        }
+
+        if (msg.body === "change color") {
+            Bot.changeColor(threadId, Color.YELLOW)
+            log("send", "Change color thread ", threadId)
         }
 
         if (msg.body === "sendFile") {
             Bot.sendAttachment("./image.jpg", threadId)
         }
 
+        if (msg.body === "triga") {
+            Bot.sendMsg("trigaga", threadId)
+            log("send", "triga" + " > " + threadId)
+        }
+
         if (msg.body === "uwu") {
-            log("send", "owo" + " > " + threadId)
             Bot.sendMsg("owo", threadId)
+            log("send", "owo" + " > " + threadId)
         }
 
         if (msg.body === "sticker")
