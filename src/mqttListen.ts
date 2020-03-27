@@ -35,7 +35,8 @@ interface MessageEvent {
 }
 
 let lastIrisSeqId: string
-let lastMessageId: Array<string> = ["1", "2", "3", "4", "5"]
+let lastMessageId: Array<string> = new Array(100).fill("")
+
 const loopTime: number = 10 * 1000
 
 export function listen(data: UserRequestData, callback: Function, userAgent?: string): void {
@@ -165,8 +166,9 @@ function handleEventTopic(event: string, data: MessageEvent, callbackFunc: Funct
                 let messageId: string = message.messageMetadata.messageId
 
                 if (message.body !== undefined && lastMessageId.includes(messageId) === false) {
+                    console.log(lastMessageId)
                     callbackFunc(message)
-
+                    
                     lastMessageId.push(messageId)
                     lastMessageId.shift()
                 }
