@@ -36,6 +36,13 @@ export interface UploadImage {
     fbid: number 
 }
 
+export let Color = {
+    RED: 2129984390566328,
+    AQUA_BLUE: 2870764842974700,
+    MANGO: 2870764842974700,
+    YELLOW:  174636906462322 ,
+}
+
 export function createHeader(cookie: string = "", userAgent?: string): Headers {
     if (!userAgent) userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
 
@@ -101,13 +108,14 @@ export function isUserID(id: number) {
 }
 
 
-export function log(type: string, text: string): void {
+export function log(type: string, ...text: Array<string|number>): void {
     const maxLength = 65
-    if (text.length > maxLength) text = text.slice(0, maxLength) + "... "
+    let line = text.join("")
+    if (line.length > maxLength) line = line.slice(0, maxLength) + "... "
 
-    if (type === "info") console.log("\x1b[32m", "[LOG]:", "\x1b[0m", text)
-    if (type === "warn") console.log("\x1b[31m", "[WARN]:", "\x1b[0m", text)
-    if (type === "error") console.log("\x1b[41m" + "[ERROR]:" + "\x1b[0m", text)
-    if (type === "receive") console.log("\x1b[34m" + "[R]:" + "\x1b[0m", text.replace(">", "\x1b[35m"+">"+ "\x1b[0m"))
-    if (type === "send") console.log("\x1b[33m" + "[S]:" + "\x1b[0m", text.replace(">", "\x1b[35m"+">"+ "\x1b[0m"))
+    if (type === "info") console.log("\x1b[32m", "[LOG]:", "\x1b[0m", line)
+    if (type === "warn") console.log("\x1b[31m", "[WARN]:", "\x1b[0m", line)
+    if (type === "error") console.log("\x1b[41m" + "[ERROR]:" + "\x1b[0m", line)
+    if (type === "receive") console.log("\x1b[34m" + "[R]:" + "\x1b[0m", line.replace(">", "\x1b[35m"+">"+ "\x1b[0m"))
+    if (type === "send") console.log("\x1b[33m" + "[S]:" + "\x1b[0m", line.replace(">", "\x1b[35m"+">"+ "\x1b[0m"))
 }

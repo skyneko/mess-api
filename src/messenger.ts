@@ -39,6 +39,14 @@ export interface MessengerApi {
      * @param callback callback.
      */
     sendAttachment(filePath: string, threadId: number, callback?:Function): void
+
+    /**
+     * Đổi màu cuộc trò chuyện.
+     * @param threadId Id nhóm/user.
+     * @param colorId colorId
+     * @param callback callback.
+     */
+    changeColor(threadId: number, colorId: number, callback?:Function):void
 }
 
 interface ResponseData {
@@ -203,6 +211,30 @@ export class Messenger {
                     log("warn", "File upload failed.")
             })
         })
+    }
+
+    public changeColor(threadId: number, colorId: number, callback: Function = () => null):void {
+        const dataString = qs.stringify({
+            ...this.createRequestData(["__user", "__a", "__dyn", "__pc", "dpr", "__rev", "__s", "__hsi", "__comet_req", "fb_dtsg"]),
+            ... {     
+                queries: JSON.stringify({ 
+                    "o0": {
+                        "doc_id": "1727493033983591",
+                        "query_params": {
+                            "data": {
+                                "client_mutation_id": "0",
+                                "actor_id": this.uid,
+                                "thread_id": threadId,
+                                "theme_id": colorId,
+                                "source": "SETTINGS"
+                            }
+                        }
+                    }
+                }) 
+            }
+        })
+
+        this.post(dataString, "https://www.facebook.com/api/graphqlbatch/", callback)
     }
 
     /**
