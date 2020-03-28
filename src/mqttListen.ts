@@ -5,30 +5,11 @@ import websocket from "websocket-stream"
 import { Messenger } from "./messenger"
 
 export interface Message {
-    attachments: Array<any>,
-    body: string,
-    irisSeqId: string
-    irisTags: Array<string>,
-    messageMetadata: {
-        actorFbId: string,
-        folderId: {
-            systemFolderId: string
-        },
-        messageId: string,
-        offlineThreadingId: string,
-        skipBumpThread: boolean,
-        tags: Array<string>,
-        threadKey: {
-            threadFbId: string,
-            otherUserFbId: string
-        },
-        threadReadStateEffect: string,
-        timestamp: string
-    },
-    participants: Array<string>,
-    requestContext: object,
-    tqSeqId: string,
-    class: string
+    threadId: number,
+    isGroup: boolean,
+    senderId: number,
+    text: string,
+    messageId: string
 }
 
 interface MessageEvent {
@@ -41,7 +22,8 @@ interface MessageEvent {
 export interface Options {
     userAgent?: string,
     logMessage?: boolean,
-    selfListen?: boolean
+    selfListen?: boolean,
+    inThread?: boolean
 }
 
 let lastIrisSeqId: string
@@ -181,9 +163,8 @@ function handleEventTopic(event: string, eventData: MessageEvent, callbackFunc: 
     if (event === "/t_ms") {
         if (!eventData.deltas) return
 
-        eventData.deltas.forEach((msg: any) => {
-            if (msg.class === "NewMessage") {
-                let message: Message = msg
+        eventData.deltas.forEach((message: any) => {
+            if (message.class === "NewMessage") {
                 let messageId: string = message.messageMetadata.messageId
 
                 if (message.body !== undefined && lastMessageId.includes(messageId) === false) {
@@ -196,7 +177,16 @@ function handleEventTopic(event: string, eventData: MessageEvent, callbackFunc: 
                         log("receive", message.messageMetadata.actorFbId + " > " + message.body)
                     }
 
-                    callbackFunc(message, new Messenger(uData))
+                    let threadId = (message.messageMetadata.threadKey.threadFbId) ? message.messageMetadata.threadKey.threadFbId : message.messageMetadata.threadKey.otherUserFbId
+
+                    callbackFunc({
+                        threadId: parseInt(threadId),
+                        isGroup: message.messageMetadata.threadKey.threadFbId !== undefined,
+                        senderId: message.messageMetadata.actorFbId,
+                        text: message.body,
+                        messageId
+                    }
+                    , new Messenger(uData))
 
                     lastMessageId.push(messageId)
                     lastMessageId.shift()

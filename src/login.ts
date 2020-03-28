@@ -82,6 +82,8 @@ export function refreshPage(cookie: string): Promise<UserRequestData> {
     return new Promise ((resolve) => {
         get({ uri: "https://facebook.com/", headers: createHeader(cookie) }, (err: Error, resp: Response, html: string) => {
 
+            if (err) return log("err", "Network Error")
+
             const fbDtsg: string = getFromHTML(html, 'name="fb_dtsg" value="', '"')
             const xhpcComposerid: string = getFromHTML(html, 'name="xhpc_composerid" value="', '"')
             const composerSessionId: string = getFromHTML(html, 'name="composer_session_id" value="', '"')
