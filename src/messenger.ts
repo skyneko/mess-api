@@ -47,6 +47,20 @@ export interface MessengerApi {
      * @param callback callback.
      */
     changeColor(threadId: number, colorId: number, callback?:Function):void
+
+    addReaction():void
+
+    changeGroupName():void
+
+    changeNickname():void
+
+    addUser():void
+
+    removeUser(): void
+
+    getUserInfo(): void
+
+    uid: number
 }
 
 interface ResponseData {
@@ -63,7 +77,7 @@ interface ResponseData {
 }
 
 export class Messenger {
-    private uid: number
+    public uid: number
     private cookie: string
     private fbDtsg: string
 
@@ -235,6 +249,31 @@ export class Messenger {
         })
 
         this.post(dataString, "https://www.facebook.com/api/graphqlbatch/", callback)
+    }
+
+
+    public addReaction():void {
+
+    }
+
+    public changeGroupName():void {
+
+    }
+
+    public changeNickname():void {
+
+    }
+
+    public addUser():void {
+
+    }
+
+    public removeUser(): void {
+
+    }
+
+    public getUserInfo(): void {
+        
     }
 
     /**
