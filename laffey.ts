@@ -2,35 +2,35 @@ import { readFileSync } from "fs";
 import {
     log,
     login,
-    User,
-    UserRequestData,
-    UploadImage,
     saveCookie,
-    Color,
     listen,
+    User,
+    Color,
     Message,
-    Messenger,
+    Options,
     MessengerApi
 } from "./src/index"
 
 const user: User = JSON.parse(readFileSync("./user/config.json", "utf-8"))
 
+const options: Options = {
+    logMessage: true,
+    selfListen: true
+}
+
 login(user)
     .then(saveCookie)
-    .then((data: UserRequestData) => {
-        listen(data, (msg: Message) => hadleMessage(msg, new Messenger(data)))
-    })
+    .then(listen(handleMessage, options))
 
+function handleMessage(msg: Message, Bot: MessengerApi) {
 
-function hadleMessage(msg: Message, Bot: MessengerApi) {
-    log("receive", msg.messageMetadata.actorFbId +" > "+ msg.body)
-    if (msg.messageMetadata.actorFbId !== "100041576433270") {
+    if (msg.messageMetadata.actorFbId !== Bot.uid.toString()) {
 
         let threadId: string | number = (msg.messageMetadata.threadKey.threadFbId) ? msg.messageMetadata.threadKey.threadFbId : msg.messageMetadata.threadKey.otherUserFbId
-            threadId = parseInt(threadId)
+        threadId = parseInt(threadId)
 
         if (msg.body === "ping") {
-            Bot.sendMsg("pong", threadId as number) 
+            Bot.sendMsg("pong", threadId as number)
             log("send", "pong", " > ", threadId)
         }
 
@@ -56,4 +56,5 @@ function hadleMessage(msg: Message, Bot: MessengerApi) {
         if (msg.body === "sticker")
             Bot.sendSticker(1070107960002293, threadId)
     }
+
 }

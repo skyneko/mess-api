@@ -2,6 +2,7 @@ import { UserRequestData, getUIDFromCookie, log } from "./utils"
 import mqtt, { PacketCallback, OnMessageCallback } from "mqtt"
 import { refreshPage } from "./login"
 import websocket from "websocket-stream"
+import { Messenger } from "./messenger"
 
 export interface Message {
     attachments: Array<any>,
@@ -17,9 +18,9 @@ export interface Message {
         offlineThreadingId: string,
         skipBumpThread: boolean,
         tags: Array<string>,
-        threadKey: { 
-            threadFbId: string, 
-            otherUserFbId: string 
+        threadKey: {
+            threadFbId: string,
+            otherUserFbId: string
         },
         threadReadStateEffect: string,
         timestamp: string
@@ -37,90 +38,107 @@ interface MessageEvent {
     queueEntityId: number
 }
 
+export interface Options {
+    userAgent?: string,
+    logMessage?: boolean,
+    selfListen?: boolean
+}
+
 let lastIrisSeqId: string
+let options: Options
+let uid: number
+let uData: UserRequestData
 let lastMessageId: Array<string> = new Array(100).fill("")
 
 const loopTime: number = 10 * 1000
 
-export function listen(data: UserRequestData, callback: Function, userAgent?: string): void {
+export function listen( callback: Function, opts: Options = {}): any {
+    return function (data: UserRequestData):void {
+        if (opts) options = opts
 
-    if (!userAgent)
-        userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
+        let userAgent: string = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
+        if (options.userAgent) userAgent = options.userAgent
 
-    const { irisSeqID, cookie } = data
-    const uid: number = getUIDFromCookie(cookie)
-    const sessionID: number = Math.floor(Math.random() * 9007199254740991) + 1
-    const websocket_client_url = "wss://edge-chat.facebook.com:443/chat?region=prn&sid=" + sessionID;
+        const { irisSeqID, cookie } = uData =data
+        const sessionID: number = Math.floor(Math.random() * 9007199254740991) + 1
 
-    const mqttOptions: object = {
-        protocol: 'wss',
-        slashes: true,
-        auth: null,
-        host: 'edge-chat.facebook.com',
-        port: null,
-        hostname: 'edge-chat.facebook.com',
-        hash: null,
-        search: '?region=prn&sid=' + sessionID,
-        query: { region: 'prn', sid: sessionID },
-        pathname: '/chat',
-        path: '/chat?region=prn&sid=' + sessionID,
-        href: 'wss://edge-chat.facebook.com/chat?region=prn&sid=' + sessionID,
-        clientId: 'mqttwsclient',
-        protocolId: 'MQIsdp',
-        protocolVersion: 3,
-        username: JSON.stringify({
-            u: uid,
-            s: sessionID,
-            cp: 3,
-            ecp: 10,
-            chat_on: true,
-            fg: false,
-            d: getGUID(),
-            ct: 'websocket',
-            mqtt_sid: '',
-            aid: 219994525426954, // messenger app id
-            st: [],
-            pm: [],
-            dc: '',
-            no_auto_fg: true,
-            gas: null,
-            pack: []
-        }),
-        defaultProtocol: 'wss'
+        /** lấy user id từ cookie */
+        uid = getUIDFromCookie(cookie)
+
+        /** MQtt */
+        const websocket_client_url = "wss://edge-chat.facebook.com:443/chat?region=prn&sid=" + sessionID;
+
+        const mqttOptions: object = {
+            protocol: 'wss',
+            slashes: true,
+            auth: null,
+            host: 'edge-chat.facebook.com',
+            port: null,
+            hostname: 'edge-chat.facebook.com',
+            hash: null,
+            search: '?region=prn&sid=' + sessionID,
+            query: { region: 'prn', sid: sessionID },
+            pathname: '/chat',
+            path: '/chat?region=prn&sid=' + sessionID,
+            href: 'wss://edge-chat.facebook.com/chat?region=prn&sid=' + sessionID,
+            clientId: 'mqttwsclient',
+            protocolId: 'MQIsdp',
+            protocolVersion: 3,
+            username: JSON.stringify({
+                u: uid,
+                s: sessionID,
+                cp: 3,
+                ecp: 10,
+                chat_on: true,
+                fg: false,
+                d: getGUID(),
+                ct: 'websocket',
+                mqtt_sid: '',
+                aid: 219994525426954, // messenger app id
+                st: [],
+                pm: [],
+                dc: '',
+                no_auto_fg: true,
+                gas: null,
+                pack: []
+            }),
+            defaultProtocol: 'wss'
+        }
+
+        const websocketOptions: object = {
+            'headers': {
+                'Cookie': cookie,
+                'Origin': 'https://www.facebook.com',
+                'User-Agent': userAgent,
+                'Referer': 'https://www.facebook.com',
+            },
+            origin: 'https://www.facebook.com',
+            protocolVersion: 13
+        }
+
+        let requestCount = 0
+
+        function connectMqttServer() {
+            refreshPage(cookie)
+                .then((data: UserRequestData) => {
+                    //log("info", "refresh page ... "+ data.irisSeqID)
+                    const client = new mqtt.Client(() => websocket(websocket_client_url, undefined, websocketOptions), mqttOptions)
+                    const irisSeqID = (requestCount > 1) ? data.irisSeqID + ++requestCount : data.irisSeqID
+
+                    client.on("error", clientOnError)
+                    client.on("connect", clientOnConnect(client, uid, irisSeqID))
+                    client.on("message", clientOnMessage(callback))
+                })
+        }
+
+        // wait
+        setTimeout(() => {
+            log("info", "Listen ... ")
+        }, loopTime);
+        // loop
+        setInterval(connectMqttServer, loopTime)
+
     }
-
-    const websocketOptions: object = {
-        'headers': {
-            'Cookie': cookie,
-            'Origin': 'https://www.facebook.com',
-            'User-Agent': userAgent,
-            'Referer': 'https://www.facebook.com',
-        },
-        origin: 'https://www.facebook.com',
-        protocolVersion: 13
-    }
-
-    let requestCount = 0
-
-    function connectMqttServer() {
-        refreshPage(cookie)
-            .then((data: UserRequestData) => {
-                //log("info", "refresh page ... "+ data.irisSeqID)
-                const client = new mqtt.Client(() => websocket(websocket_client_url, undefined, websocketOptions), mqttOptions)
-                const irisSeqID = (requestCount > 1) ? data.irisSeqID + ++requestCount : data.irisSeqID
-
-                client.on("error", clientOnError)
-                client.on("connect", clientOnConnect(client, uid, irisSeqID))
-                client.on("message", clientOnMessage(callback))
-            })
-    }
-
-    // wait
-    setTimeout(() => {
-        log("info", "Listen ... ")
-    }, loopTime);
-    // loop
-    setInterval(connectMqttServer, loopTime)
 
 }
 
@@ -152,26 +170,34 @@ function clientOnConnect(client: any, uid: number, irisSeqID: string): Function 
 function clientOnMessage(callbackFunc: Function) {
     return function (event: any, message: OnMessageCallback, packet: PacketCallback): void {
 
-        const data: any = JSON.parse(message.toString());
-        if (data.errorCode === "ERROR_QUEUE_OVERFLOW") return log("error", "ERROR_QUEUE_OVERFLOW");
+        const eventData: any = JSON.parse(message.toString());
+        if (eventData.errorCode === "ERROR_QUEUE_OVERFLOW") return log("error", "ERROR_QUEUE_OVERFLOW");
 
-        handleEventTopic(event, data, callbackFunc)
+        handleEventTopic(event, eventData, callbackFunc)
     }
 }
 
-function handleEventTopic(event: string, data: MessageEvent, callbackFunc: Function): void {
+function handleEventTopic(event: string, eventData: MessageEvent, callbackFunc: Function): void {
     if (event === "/t_ms") {
-        if (!data.deltas) return
+        if (!eventData.deltas) return
 
-        data.deltas.forEach((msg: any) => {
+        eventData.deltas.forEach((msg: any) => {
             if (msg.class === "NewMessage") {
                 let message: Message = msg
                 let messageId: string = message.messageMetadata.messageId
 
                 if (message.body !== undefined && lastMessageId.includes(messageId) === false) {
-                    // console.log(lastMessageId)
-                    callbackFunc(message)
-                    
+
+                    /** check self listen */
+                    if (parseInt(message.messageMetadata.actorFbId) === uid && !options.selfListen) return
+
+                    /** log message */
+                    if (options.logMessage) {
+                        log("receive", message.messageMetadata.actorFbId + " > " + message.body)
+                    }
+
+                    callbackFunc(message, new Messenger(uData))
+
                     lastMessageId.push(messageId)
                     lastMessageId.shift()
                 }
