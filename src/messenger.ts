@@ -38,7 +38,7 @@ export interface MessengerApi {
      * @param threadId Id nhóm/user.
      * @param callback callback.
      */
-    sendAttachment(filePath: string, threadId: number, callback?:Function): void
+    sendAttachment(filePath: string, threadId: number, callback?: Function): void
 
     /**
      * Đổi màu cuộc trò chuyện.
@@ -46,17 +46,29 @@ export interface MessengerApi {
      * @param colorId colorId
      * @param callback callback.
      */
-    changeColor(threadId: number, colorId: number, callback?:Function):void
+    changeColor(threadId: number, colorId: number, callback?: Function): void
 
-    addReaction():void
+    /**
+     * Thêm biểu tượng cảm xúc vào tin nhắn.
+     * @param messageId Id tin nhắn.
+     * @param reaction emoji: https://emojipedia.org/facebook/
+     * @param callback callback
+     */
+    addReaction(messageId: string, reaction: string, callback?: Function): void
 
-    changeGroupName():void
+    /**
+     * Đổi tên cuộc trò chuyện.
+     * @param threadId Id nhóm/user.
+     * @param name tên mới.
+     * @param callback callback
+     */
+    changeGroupName(threadId: number, name: string, callback?: Function): void
 
-    changeNickname():void
+    changeNickname(userId: number, nickname: string, threadId: number, callback?: Function): void
 
-    addUser():void
+    addUser(userId: number, threadId: number, callback?: Function): void
 
-    removeUser(): void
+    removeUser(userId: number, threadId: number, callback?: Function): void
 
     getUserInfo(): void
 
@@ -153,12 +165,12 @@ export class Messenger {
         this.post(dataString, "https://www.facebook.com/ajax/messaging/typ.php", callback)
     }
 
-    public sendAttachment(filePath: string, threadId: number, callback:Function = () => null): void {
+    public sendAttachment(filePath: string, threadId: number, callback: Function = () => null): void {
         const messageId = this.getMessageId()
         const filename: string = filePath.slice(filePath.lastIndexOf("/") + 1, filePath.length)
 
         this.uploadFile(filePath)
-            .then ((image: UploadImage) => {
+            .then((image: UploadImage) => {
 
                 let data: object = {
                     ...{
@@ -227,11 +239,11 @@ export class Messenger {
         })
     }
 
-    public changeColor(threadId: number, colorId: number, callback: Function = () => null):void {
+    public changeColor(threadId: number, colorId: number, callback: Function = () => null): void {
         const dataString = qs.stringify({
             ...this.createRequestData(["__user", "__a", "__dyn", "__pc", "dpr", "__rev", "__s", "__hsi", "__comet_req", "fb_dtsg"]),
-            ... {     
-                queries: JSON.stringify({ 
+            ... {
+                queries: JSON.stringify({
                     "o0": {
                         "doc_id": "1727493033983591",
                         "query_params": {
@@ -244,7 +256,7 @@ export class Messenger {
                             }
                         }
                     }
-                }) 
+                })
             }
         })
 
@@ -252,24 +264,98 @@ export class Messenger {
     }
 
 
-    public addReaction():void {
+    public addReaction(messageId: string, reaction: string, callback: Function = () => null): void {
 
+        if (reaction !== "😍" && reaction !== "😆" && reaction !== "😮" && reaction !== "😢" && reaction !== "😠" && reaction !== "👍" && reaction !== "👎") {
+            return log("warn", "inval reaction: " + reaction);
+        }
+
+        const dataString: string = qs.stringify(
+            this.createRequestData(["__user", "__a", "__dyn", "__pc", "dpr", "__rev", "__s", "__hsi", "__comet_req", "fb_dtsg"])
+        )
+
+        const query: string = qs.stringify({
+            doc_id: '1491398900900362',
+            variables: JSON.stringify({
+                data:
+                {
+                    client_mutation_id: '0',
+                    actor_id: this.uid,
+                    action: 'ADD_REACTION',
+                    message_id: messageId,
+                    reaction: reaction
+                }
+            })
+        })
+
+        this.post(dataString, "https://www.facebook.com/webgraphql/mutation?" + query, callback)
     }
 
-    public changeGroupName():void {
+    public changeGroupName(threadId: number, name: string, callback: Function = () => null): void {
+        if (isUserID(threadId)) return log("warn", "Chỉ có thể đổi tên cho group.")
 
+        const dataString = qs.stringify({
+            ...this.createRequestData(["__user", "__a", "__dyn", "__pc", "dpr", "__rev", "__s", "__hsi", "__comet_req", "fb_dtsg"]),
+            ... {
+                thread_id: threadId,
+                thread_name: name,
+            }
+        })
+
+        this.post(dataString, "https://www.facebook.com/messaging/set_thread_name/", callback)
     }
 
-    public changeNickname():void {
+    public changeNickname(userId: number, nickname: string, threadId: number, callback: Function = () => null): void {
+        const dataString = qs.stringify({
+            ...this.createRequestData(["__user", "__a", "__dyn", "__pc", "dpr", "__rev", "__s", "__hsi", "__comet_req", "fb_dtsg"]),
+            ... {
+                request_user_id: this.uid,
+                thread_or_other_fbid: threadId,
+                participant_id: userId,
+                nickname: nickname,
+            }
+        })
 
+        this.post(dataString, "https://www.facebook.com/messaging/save_thread_nickname/?source=thread_settings", callback)
     }
 
-    public addUser():void {
+    public addUser(userId: number, threadId: number, callback: Function = () => null): void {
+        if (isUserID(threadId)) return log("warn", "Chỉ có thể sử dụng trong group.")
 
+        const messageId = this.getMessageId()
+
+        let dataString: string = qs.stringify({
+            ...{
+                client: "mercury",
+				action_type: "ma-type:log-message",
+				ephemeral_ttl_mode: "0",
+				"log_message_data[added_participants][0]": "fbid:"+userId,
+				log_message_type: "log:subscribe",
+				message_id: messageId,
+				offline_threading_id: messageId,
+				source: "source:titan:web",
+				thread_fbid: threadId,
+				timestamp: Date.now(),
+            },
+            ...this.createRequestData(["__user", "__a", "__dyn", "__pc", "dpr", "__rev", "__s", "__hsi", "__comet_req", "fb_dtsg"])
+        })
+
+        this.post(dataString, "https://www.facebook.com/messaging/send/", callback)
     }
 
-    public removeUser(): void {
+    public removeUser(userId: number, threadId: number, callback: Function = () => null): void {
+        if (isUserID(threadId)) return log("warn", "Chỉ có thể sử dụng trong group.")
 
+        const dataString: string = qs.stringify(
+            this.createRequestData(["__user", "__a", "__dyn", "__pc", "dpr", "__rev", "__s", "__hsi", "__comet_req", "fb_dtsg"])
+        )
+
+        const query: string = qs.stringify({
+                uid: userId,
+                tid: threadId
+        })
+
+        this.post(dataString, "https://www.facebook.com/chat/remove_participants/?" + query, callback)
     }
 
     public getUserInfo(): void {

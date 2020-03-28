@@ -1,3 +1,4 @@
+
 export interface Headers {
     "User-Agent": string,
     "Accept"?: string,
@@ -41,6 +42,15 @@ export let Color = {
     AQUA_BLUE: 2870764842974700,
     MANGO: 2870764842974700,
     YELLOW:  174636906462322 ,
+}
+
+export let Reaction = {
+    FACE_HEART: "😍",
+    ANGRY: "😆",
+    LOVE: "❤️",
+    SAD: "😢",
+    LIKE: "👍",
+    DISLIKE: "👎"
 }
 
 export function createHeader(cookie: string = "", userAgent?: string): Headers {
