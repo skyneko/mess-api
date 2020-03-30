@@ -10,14 +10,13 @@ import {
     Options,
     MessengerApi,
     Reaction
-} from "./src/index"
+} from "./index"
 
 const user: User = JSON.parse(readFileSync("./user/config.json", "utf-8"))
 
 const options: Options = {
     logMessage: true,
-    selfListen: false,
-    inThread: false
+    selfListen: false
 }
 
 login(user)
@@ -26,7 +25,7 @@ login(user)
 
 function handleMessage(msg: Message, Bot: MessengerApi) {
 
-    Bot.addReaction(msg.messageId, Reaction.SAD)
+    //Bot.addReaction(msg.messageId, Reaction.SAD)
 
     if (msg.text === "ping") {
         Bot.sendMsg("pong", msg.threadId)

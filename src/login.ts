@@ -2,6 +2,7 @@ import { post, get, Response } from "request"
 import { readFileSync, writeFileSync, existsSync } from "fs"
 import qs from "querystring"
 import { createHeader, getFromHTML, log, User, UserRequestData } from "./utils"
+import { Messenger, MessengerApi } from "./messenger"
 
 const cookiePath: string = "./user/cookie.uwu"
 

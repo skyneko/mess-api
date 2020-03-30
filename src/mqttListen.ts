@@ -22,8 +22,7 @@ interface MessageEvent {
 export interface Options {
     userAgent?: string,
     logMessage?: boolean,
-    selfListen?: boolean,
-    inThread?: boolean
+    selfListen?: boolean
 }
 
 let lastIrisSeqId: string
@@ -215,3 +214,4 @@ function getGUID(): string {
     });
     return id;
 }
+
