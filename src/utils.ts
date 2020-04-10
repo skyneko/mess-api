@@ -34,7 +34,7 @@ export interface UploadImage {
     filename: string,
     filetype: string,
     src: string,
-    fbid: number 
+    fbid: number
 }
 
 export let Color = {
@@ -42,19 +42,25 @@ export let Color = {
     AQUA_BLUE: 2870764842974700,
     MANGO: 2870764842974700,
     YELLOW:  174636906462322 ,
+    CANDY: 205488546921017,
+    CITRUS: 370940413392601,
+    BERRY: 164535220883264,
+    AQUA: 417639218648241,
 }
 
 export let Reaction = {
     FACE_HEART: "😍",
     ANGRY: "😆",
-    LOVE: "❤️",
+    LOVE: "❤",
     SAD: "😢",
     LIKE: "👍",
     DISLIKE: "👎"
 }
 
 export function createHeader(cookie: string = "", userAgent?: string): Headers {
-    if (!userAgent) userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
+    if (!userAgent) userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0"
+    /** Remove spaces */
+    cookie = cookie.trim()
 
     return {
         "User-Agent": userAgent,

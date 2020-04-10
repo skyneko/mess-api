@@ -266,7 +266,16 @@ export class Messenger {
 
     public addReaction(messageId: string, reaction: string, callback: Function = () => null): void {
 
-        if (reaction !== "😍" && reaction !== "😆" && reaction !== "😮" && reaction !== "😢" && reaction !== "😠" && reaction !== "👍" && reaction !== "👎") {
+        if (
+            reaction !== "😍"
+            && reaction !== "😆"
+            && reaction !== "😮"
+            && reaction !== "😢"
+            && reaction !== "😠"
+            && reaction !== "👍"
+            && reaction !== "👎"
+            && reaction !== "❤"
+        ) {
             return log("warn", "inval reaction: " + reaction);
         }
 
@@ -359,13 +368,13 @@ export class Messenger {
     }
 
     public getUserInfo(): void {
-        
+
     }
 
     /**
      * Xử lý sau khi POST data.
-     * @param response 
-     * @param callback 
+     * @param response
+     * @param callback
      */
     private handleResponse(response: string, callback: Function): void {
         callback(this.parseResponse(response))
@@ -373,7 +382,7 @@ export class Messenger {
 
     /**
      * Giải mã data trả về
-     * @param response 
+     * @param response
      */
     private parseResponse(response: string): ResponseData {
         if (response.indexOf("for (;;);") === 0)
@@ -384,9 +393,9 @@ export class Messenger {
 
     /**
      * Post lên facebook, sử dụng datastring.
-     * @param dataString 
-     * @param url 
-     * @param callback 
+     * @param dataString
+     * @param url
+     * @param callback
      */
     private post(dataString: string, url: string, callback: Function) {
 

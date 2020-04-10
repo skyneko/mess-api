@@ -25,59 +25,30 @@ login(user)
 
 function handleMessage(msg: Message, Bot: MessengerApi) {
 
-    //Bot.addReaction(msg.messageId, Reaction.SAD)
+    //Bot.addReaction(msg.messageId, randomProperty(Reaction))
+    Bot.sendTyping(msg.threadId)
 
     if (msg.text === "ping") {
         Bot.sendMsg("pong", msg.threadId)
         log("send", "pong", " > ", msg.threadId)
     }
-    
-    if (msg.text === "remove user") {
-        Bot.removeUser(100009854073587, msg.threadId)
-        log("send", "Remove user.")
+
+    if (msg.text === "change color") {
+        const randomColor = randomProperty(Color)
+        Bot.changeColor(msg.threadId, randomColor)
     }
 
-    if (msg.text === "add user") {
-        Bot.addUser(100009854073587, msg.threadId)
-        log("send", "Add user.")
-    }
+    /*
+
 
     if (msg.text === "change nickname") {
         Bot.changeNickname(msg.senderId, "uwu", msg.threadId)
         log("send", "Change nickname.")
     }
-
-    if (msg.text === "change name") {
-        Bot.changeGroupName(msg.threadId, "owo")
-        log("send", "Change thread name.")
-    }
-
-    if (msg.text === "reaction") {
-        Bot.addReaction(msg.messageId, Reaction.SAD)
-        log("send", "Set reaction.")
-    }
-
-    if (msg.text === "change color") {
-        Bot.changeColor(msg.threadId, Color.YELLOW)
-        log("send", "Change color thread ", msg.threadId)
-    }
-
-    if (msg.text === "sendFile") {
-        Bot.sendAttachment("./image.jpg", msg.threadId)
-    }
-
-    if (msg.text === "triga") {
-        Bot.sendMsg("trigaga", msg.threadId)
-        log("send", "triga" + " > " + msg.threadId)
-    }
-
-    if (msg.text === "uwu") {
-        Bot.sendMsg("owo", msg.threadId)
-        log("send", "owo" + " > " + msg.threadId)
-    }
-
-    if (msg.text === "sticker")
-        Bot.sendSticker(1070107960002293, msg.threadId)
-
-
+    */
 }
+
+const randomProperty = function (obj: any) {
+    var keys = Object.keys(obj);
+    return obj[keys[ keys.length * Math.random() << 0]];
+};

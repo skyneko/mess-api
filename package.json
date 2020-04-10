@@ -16,7 +16,8 @@
   "main": "laffey.ts",
   "scripts": {
     "start": "ts-node laffey.ts",
-    "build": "tsc laffey.ts"
+    "build": "tsc laffey.ts",
+    "test": "ts-node ./test/test.ts"
   },
   "repository": "https://github.com/skyneko/mess-api.git",
   "author": "yui421 <banhgao.nya@gmail.com>",

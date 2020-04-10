@@ -2,7 +2,7 @@ import { post, get, Response } from "request"
 import { readFileSync, writeFileSync, existsSync } from "fs"
 import qs from "querystring"
 import { createHeader, getFromHTML, log, User, UserRequestData } from "./utils"
-import { Messenger, MessengerApi } from "./messenger"
+//import { Messenger, MessengerApi } from "./messenger"
 
 const cookiePath: string = "./user/cookie.uwu"
 
@@ -41,6 +41,9 @@ export function login(user: User): Promise<UserRequestData> {
 
         const loginBaseUrl: string = "https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&lwv=110"
 
+        /**
+         * Lần 1, lấy header và cookie chưa đăng nhập từ trang chính facebook.
+         */
         post({
             uri: loginBaseUrl,
             headers: createHeader()
@@ -48,8 +51,15 @@ export function login(user: User): Promise<UserRequestData> {
             if (err) return console.log(err)
             if (!resp.headers["set-cookie"]) return console.log("headers['set-cookie'] 1 is undefined!")
 
+            /**
+             * Tách cookie từ header và định dạng lại.
+             */
             let cookie: string = resp.headers["set-cookie"].map(key => key.split("; ")[0]).join("; ")
 
+            /** ***************************************************
+             * Lần 2, sử dụng username và password để đăng nhập và lấy cookie từ header
+             * @see header['set-cookie']
+             */
             post({
                 uri: loginBaseUrl,
                 headers: createHeader(cookie),
@@ -60,6 +70,7 @@ export function login(user: User): Promise<UserRequestData> {
 
                 cookie = resp.headers["set-cookie"].map(key => key.split("; ")[0]).join("; ")
 
+                /** Kiểm tra các lỗi đăng nhập. */
                 if (cookie.indexOf("sfau=") > -1) return log("error", "Invalid username or password.")
                 if (cookie.indexOf("checkpoint=") > -1) return log("error", "Checkpoint.")
 
@@ -74,11 +85,38 @@ export function login(user: User): Promise<UserRequestData> {
 
 }
 
+/**
+ * Kiểm tra string có phải rỗng hay không.
+ * @return boolean
+ */
+function isEmpty(str: string): boolean {
+    return (!str || 0 === str.length)
+}
+
+/**
+ * Kiểm tra cookie.
+ * Nếu cookie đã hết hạn, login lại và trả về dữ liệu mới.
+ */
+async function checkAndRenewCookie(data: UserRequestData) {
+    if (!isEmpty(data.irisSeqID) && !isEmpty(data.sessionId) && !isEmpty(data.xhpcComposerid)) {
+        //login()
+    }
+    else return data
+}
+
+/**
+ * Lưu trữ cookie vào file 
+ * @see cookiePath
+ */
 export async function saveCookie (data: UserRequestData) {
     writeFileSync(cookiePath, data.cookie)
     return data
 }
 
+/**
+ * Lấy html từ trang chính facebook thông qua cookie.
+ * Phân tích và lấy các tham số cần thiết
+ */
 export function refreshPage(cookie: string): Promise<UserRequestData> {
     return new Promise ((resolve) => {
         get({ uri: "https://facebook.com/", headers: createHeader(cookie) }, (err: Error, resp: Response, html: string) => {
