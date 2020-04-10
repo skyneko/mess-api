@@ -29,22 +29,32 @@ let lastIrisSeqId: string
 let options: Options
 let uid: number
 let uData: UserRequestData
+
+/**
+ * Tạo mảng messageId để lưu các id tin nhắn trước đó. Sau khi listen 
+ * sẽ kiểm tra trong mảng này, nếu không trùng thì mới tiếp tục thực hiện @callback.
+ * @see line 200.
+ */
 let lastMessageId: Array<string> = new Array(100).fill("")
 
+/** khoảng thời gian mỗi lần refresh trang. */
 const loopTime: number = 10 * 1000
 
 export function listen( callback: Function, opts: Options = {}): any {
     return function (data: UserRequestData):void {
         if (opts) options = opts
 
-        let userAgent: string = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
+        let userAgent: string = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0"
         if (options.userAgent) userAgent = options.userAgent
 
-        const { irisSeqID, cookie } = uData =data
         const sessionID: number = Math.floor(Math.random() * 9007199254740991) + 1
+        let { irisSeqID, cookie } = uData = data
 
         /** lấy user id từ cookie */
         uid = getUIDFromCookie(cookie)
+
+        /** Remove spaces */
+        cookie = cookie.trim()
 
         /** MQtt */
         const websocket_client_url = "wss://edge-chat.facebook.com:443/chat?region=prn&sid=" + sessionID;
@@ -97,14 +107,16 @@ export function listen( callback: Function, opts: Options = {}): any {
             protocolVersion: 13
         }
 
+        /** Đếm số lần refresh trang */
         let requestCount = 0
 
         function connectMqttServer() {
             refreshPage(cookie)
                 .then((data: UserRequestData) => {
-                    //log("info", "refresh page ... "+ data.irisSeqID)
+                    // log("info", "refresh page ... "+ data.irisSeqID)
                     const client = new mqtt.Client(() => websocket(websocket_client_url, undefined, websocketOptions), mqttOptions)
-                    const irisSeqID = (requestCount > 1) ? data.irisSeqID + ++requestCount : data.irisSeqID
+                    // const irisSeqID = (requestCount > 1) ? data.irisSeqID + ++requestCount : data.irisSeqID
+                    const irisSeqID = data.irisSeqID
 
                     client.on("error", clientOnError)
                     client.on("connect", clientOnConnect(client, uid, irisSeqID))
@@ -112,7 +124,10 @@ export function listen( callback: Function, opts: Options = {}): any {
                 })
         }
 
-        // wait
+        /**
+         * - Kết nối server chat. -
+         * Sau khoảng 1 thời gian nhất định, data sẽ được refresh và kết nối lại
+         */
         setTimeout(() => {
             log("info", "Listen ... ")
         }, loopTime);
@@ -123,10 +138,20 @@ export function listen( callback: Function, opts: Options = {}): any {
 
 }
 
+/**
+ * Xử lý lỗi khi connect mqtt.
+ */
 function clientOnError(err: Error): void {
     log("error", "WebSocket connection failed.")
 }
 
+/**
+ * Xử lý khi sau khi connect server chat.
+ * 
+ * @param irisSeqID id này cũng chả biết là gì nhưng nó sẽ trỏ đến tin nhắn
+ *  gần nhất khi connect. Facebook sẽ check cái này nên nếu thiếu sẽ
+ *  bị lỗi “ERROR_QUEUE_OVERFLOW”
+ */
 function clientOnConnect(client: any, uid: number, irisSeqID: string): Function {
     return function (): void {
         client.subscribe(["/legacy_web", "/webrtc", "/br_sr", "/sr_res", "/t_ms", "/thread_typing", "/orca_typing_notifications", "/notify_disconnect", "/orca_presence"],
@@ -148,6 +173,9 @@ function clientOnConnect(client: any, uid: number, irisSeqID: string): Function 
     }
 }
 
+/**
+ * Sau khi connect thành công, hàm này sẽ được gọi. :>
+ */
 function clientOnMessage(callbackFunc: Function) {
     return function (event: any, message: OnMessageCallback, packet: PacketCallback): void {
 
@@ -158,11 +186,20 @@ function clientOnMessage(callbackFunc: Function) {
     }
 }
 
+/**
+ * Lọc và xử lý các event
+ */
 function handleEventTopic(event: string, eventData: MessageEvent, callbackFunc: Function): void {
+    
+    /**
+     * Event này sẽ bao gồm các tin nhắn mới (text, hình ảnh, âm thanh, ...)
+     * @callback data {threadID, isGroup, senderId, text, messageId}
+     */
     if (event === "/t_ms") {
         if (!eventData.deltas) return
 
         eventData.deltas.forEach((message: any) => {
+
             if (message.class === "NewMessage") {
                 let messageId: string = message.messageMetadata.messageId
 
@@ -195,6 +232,9 @@ function handleEventTopic(event: string, eventData: MessageEvent, callbackFunc: 
         })
     }
 
+    /**
+     * Sự kiện typing (đang gõ) từ người dùng. 
+     */
     if (event === "/thread_typing") {
 
     }
@@ -204,6 +244,10 @@ function handleEventTopic(event: string, eventData: MessageEvent, callbackFunc: 
     }
 }
 
+/**
+ * Hàm này tạo một id ngẫu nhiên với định dạng 
+ * xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+ */
 function getGUID(): string {
     var sectionLength = Date.now();
     var id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
