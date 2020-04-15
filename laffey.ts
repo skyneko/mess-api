@@ -10,7 +10,8 @@ import {
     Options,
     MessengerApi,
     Reaction
-} from "./index"
+} from "./src"
+import { UserRequestData, Messenger } from "./src";
 
 const user: User = JSON.parse(readFileSync("./user/config.json", "utf-8"))
 
@@ -21,31 +22,30 @@ const options: Options = {
 
 login(user)
     .then(saveCookie)
+    .then(beforeListen)
     .then(listen(handleMessage, options))
 
 function handleMessage(msg: Message, Bot: MessengerApi) {
 
-    //Bot.addReaction(msg.messageId, randomProperty(Reaction))
-    Bot.sendTyping(msg.threadId)
 
     if (msg.text === "ping") {
         Bot.sendMsg("pong", msg.threadId)
-        log("send", "pong", " > ", msg.threadId)
+        // log("send", "pong", " > ", msg.threadId)
     }
 
     if (msg.text === "change color") {
-        const randomColor = randomProperty(Color)
-        Bot.changeColor(msg.threadId, randomColor)
+
+        Bot.changeColor(msg.threadId, randomProperty(Color))
     }
 
-    /*
+}
 
+async function beforeListen(data: UserRequestData) {
+    const Bot = new Messenger(data)
 
-    if (msg.text === "change nickname") {
-        Bot.changeNickname(msg.senderId, "uwu", msg.threadId)
-        log("send", "Change nickname.")
-    }
-    */
+    Bot.sendAttachment("./files/backnumber.mp3", 2252600751432999, console.log)
+
+    return data
 }
 
 const randomProperty = function (obj: any) {
