@@ -198,7 +198,7 @@ export class Messenger {
                 let dataString = qs.stringify(data)
 
                 if (isUserID(threadId)) dataString = dataString.replace("&thread_fbid=", "&other_user_fbid=")
-                console.log(data)
+
                 this.post(dataString, "https://www.facebook.com/messaging/send/", callback)
             })
     }

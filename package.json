@@ -15,7 +15,7 @@
   "scripts": {
     "start": "node ./dist/laffey.js",
     "build": "tsc -p .",
-    "dev"  :  "ts-node ./src/laffey.ts",
+    "dev": "ts-node ./src/laffey.ts",
     "test": "ts-node ./test/test.ts"
   },
   "repository": "https://github.com/skyneko/mess-api.git",

@@ -97,6 +97,15 @@ export function getRandomInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+export function randomProperty (obj: any) {
+    var keys = Object.keys(obj);
+    return obj[keys[ keys.length * Math.random() << 0]];
+}
+
+export function isIntString(str: any) {
+    return !isNaN(str)
+}
+
 export function getUIDFromCookie(cookie: string): number {
 
     for (let e of cookie.split("; ")) {
@@ -123,6 +132,9 @@ export function isUserID(id: number) {
     return id.toString().indexOf("1000") === 0
 }
 
+export function wait1(callback: Function) {
+    setTimeout(callback, 1000)
+}
 
 export function log(type: string, ...text: Array<string|number>): void {
     const maxLength = 65

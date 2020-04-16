@@ -5,11 +5,11 @@ import websocket from "websocket-stream"
 import { Messenger } from "./messenger"
 
 export interface Message {
+    type: "text" | "attachments",
     threadId: number,
     isGroup: boolean,
     senderId: number,
-    text: string,
-    messageId: string
+    messageId: string,
 }
 
 interface MessageEvent {
@@ -200,8 +200,101 @@ function handleEventTopic(event: string, eventData: MessageEvent, callbackFunc: 
         eventData.deltas.forEach((message: any) => {
 
             if (message.class === "NewMessage") {
+
+                
+
                 let messageId: string = message.messageMetadata.messageId
 
+                // sticker 
+                if (message.stickerId !== undefined && lastMessageId.includes(messageId) === false) {
+
+                    /** check self listen */
+                    if (parseInt(message.messageMetadata.actorFbId) === uid && !options.selfListen) return
+
+                    /** log message */
+                    if (options.logMessage) {
+                        log("receive", message.messageMetadata.actorFbId + " > " + "sticker.")
+                    }
+
+                    let threadId = (message.messageMetadata.threadKey.threadFbId) ? message.messageMetadata.threadKey.threadFbId : message.messageMetadata.threadKey.otherUserFbId
+
+
+                    callbackFunc({
+                        type: "sticker",
+                        pack:  message.attachments[0].mercury.sticker_attachment.pack.id,
+                        label: message.attachments[0].mercury.sticker_attachment.label,
+                        frameCount: message.attachments[0].mercury.sticker_attachment.frame_count,
+                        image: {
+                            spriteImage: message.attachments[0].mercury.sticker_attachment.sprite_image,
+                            url: message.attachments[0].mercury.sticker_attachment.url,
+                            width: message.attachments[0].mercury.sticker_attachment.width,
+                            height: message.attachments[0].mercury.sticker_attachment.height
+                        },
+                        stickerId: parseInt(message.stickerId),
+                        threadId: parseInt(threadId),
+                        isGroup: message.messageMetadata.threadKey.threadFbId !== undefined,
+                        senderId: message.messageMetadata.actorFbId,
+                        messageId
+                    }
+                    , new Messenger(uData))
+
+                    lastMessageId.push(messageId)
+                    lastMessageId.shift()
+                }
+
+                // attachments
+                if (message.attachments.length > 0 && lastMessageId.includes(messageId) === false && message.stickerId === undefined) {
+
+                    /** check self listen */
+                    if (parseInt(message.messageMetadata.actorFbId) === uid && !options.selfListen) return
+
+                    /** log message */
+                    if (options.logMessage) {
+                        log("receive", message.messageMetadata.actorFbId + " > " + "attachment.")
+                    }
+
+                    let threadId = (message.messageMetadata.threadKey.threadFbId) ? message.messageMetadata.threadKey.threadFbId : message.messageMetadata.threadKey.otherUserFbId
+
+                    let attachments =  message.attachments.map((attachment: any) => {
+                        if (attachment.mimeType === "image/jpeg" || attachment.mimeType === "image/png") {
+                            return {
+                                type: "image",
+                                id: attachment.id,
+                                filename: attachment.filename,
+                                filesize: attachment.fileSize,
+                                width: attachment.imageMetadata.width,
+                                height: attachment.imageMetadata.height,
+                                preview: {
+                                    preview: attachment.mercury.blob_attachment.preview.uri,
+                                    large_preview:  attachment.mercury.blob_attachment.large_preview.uri,
+                                    thumbnail: attachment.mercury.blob_attachment.thumbnail.uri
+                                },
+                                extension: attachment.mercury.blob_attachment.original_extension,
+                                renderAsSticker: attachment.mercury.blob_attachment.render_as_sticker
+                            }
+                        }
+
+                        if (attachment.mimeType === "application/octet-stream") {
+
+                        }
+                    })
+
+                    callbackFunc({
+                        type: "attachments",
+                        attachments: attachments,
+                        threadId: parseInt(threadId),
+                        isGroup: message.messageMetadata.threadKey.threadFbId !== undefined,
+                        senderId: message.messageMetadata.actorFbId,
+                        messageId
+                    }
+                    , new Messenger(uData))
+
+                    lastMessageId.push(messageId)
+                    lastMessageId.shift()
+
+                }
+
+                // text msg 
                 if (message.body !== undefined && lastMessageId.includes(messageId) === false) {
 
                     /** check self listen */
@@ -215,6 +308,7 @@ function handleEventTopic(event: string, eventData: MessageEvent, callbackFunc: 
                     let threadId = (message.messageMetadata.threadKey.threadFbId) ? message.messageMetadata.threadKey.threadFbId : message.messageMetadata.threadKey.otherUserFbId
 
                     callbackFunc({
+                        type: "text",
                         threadId: parseInt(threadId),
                         isGroup: message.messageMetadata.threadKey.threadFbId !== undefined,
                         senderId: message.messageMetadata.actorFbId,
